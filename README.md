@@ -3,6 +3,7 @@
 ⚙️💎➡️📦💨🔁🌊
 > A Ruby library for concurrent batch data processing through lightweight, composable flows.
 
+[![Gem Version](https://badge.fury.io/rb/rapidflow.svg)](https://badge.fury.io/rb/rapidflow)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 > **⚠️ Early Development Warning**: This library is at a very early stage of development. The interfaces and APIs 
