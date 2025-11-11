@@ -9,9 +9,9 @@ module RapidFlow
     def self.build(&block)
       builder = BatchBuilder.new
       builder.instance_eval(&block) if block
-      belt = new(*builder.stages)
-      belt.start
-      belt
+      batch = new(*builder.stages)
+      batch.start
+      batch
     end
 
     # Initialize with a list of stage configs: { fn: -> (input) { }, workers: Integer }, ...
@@ -27,13 +27,13 @@ module RapidFlow
       @locked = false
       @locked_mutex = Mutex.new
 
-      # to track if belt is running
+      # to track if batch is running
       @running = false
       @running_mutex = Mutex.new
     end
 
     def start
-      raise ConfigError, "Unable to start the belt without any stages" if @stages.empty?
+      raise ConfigError, "Unable to start the batch without any stages" if @stages.empty?
 
       @stages.each(&:start)
       mark_run!
@@ -86,7 +86,7 @@ module RapidFlow
 
     def ensure_not_finalized!
       @locked_mutex.synchronize do
-        raise RunError, "Cannot push to a locked belt when results are requested" if @locked
+        raise RunError, "Cannot push to a locked batch when results are requested" if @locked
       end
     end
 
