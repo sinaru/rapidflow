@@ -39,18 +39,22 @@ module RapidFlow
     end
 
     def test_no_stages_with_build
-      assert_raises(Batch::ConfigError, "Unable to start the belt without any stages") do
+      error = assert_raises(Batch::ConfigError) do
         Batch.build do
           # no stages
         end
       end
+
+      assert_equal "Unable to start the batch without any stages", error.message
     end
 
     def test_no_stages_belt_start
-      assert_raises(Batch::ConfigError, "Unable to start the belt without any stages") do
+      error = assert_raises(Batch::ConfigError) do
         belt = Batch.new
         belt.start
       end
+
+      assert_equal "Unable to start the batch without any stages", error.message
     end
 
     def test_concurrent_execution_is_faster_than_sequential
@@ -196,9 +200,9 @@ module RapidFlow
       belt.push("item1")
       belt.results
 
-      assert_raises(Batch::RunError, "Cannot push to a locked belt when results are requested") do
-        belt.push("item2")
-      end
+      error = assert_raises(Batch::RunError) { belt.push("item2") }
+
+      assert_equal "Cannot push to a locked batch when results are requested", error.message
     end
 
     def test_results_waits_for_all_processing_to_complete
