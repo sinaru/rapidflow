@@ -21,6 +21,22 @@ module RapidFlow
 
       assert_equal "Unable to start the batch without any stages", error.message
     end
+
+    def test_invalid_worker_count
+      [
+        -3,
+        0,
+        1.5,
+        'foo',
+        :bar
+      ].each do |invalid_worker_count|
+        error = assert_raises(Batch::ConfigError, "Expected to raise exception for '#{invalid_worker_count}'") do
+          Batch.new({ fn: ->(data) { data.upcase }, workers: invalid_worker_count })
+        end
+
+        assert_equal "Worker count should be a positive number for stage", error.message
+      end
+    end
   end
 end
 
