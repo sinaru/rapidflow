@@ -139,5 +139,73 @@ module RapidFlow
         assert_equal "Always fails", error.message
       end
     end
+
+    def test_no_method_error_in_first_lamda_function
+      batch = Batch.build do
+        # invalid stage - calling invalid method
+        stage ->(data) { data.foobar }
+
+        # valid stage
+        stage ->(data) { data.upcase }
+
+        # valid stage
+        stage ->(data) { data + '!' }
+      end
+
+      batch.push("hello")
+
+      results = batch.results
+
+      assert_equal 1, results.length
+      assert_equal "hello", results.first[0] # preserved the original input as the error happened in the first stage
+      assert_instance_of NoMethodError, results.first[1]
+
+      expected_error_message = case RUBY_VERSION
+                               when /^3.4/
+                                 "undefined method 'foobar' for an instance of String"
+                               when /^3.3/
+                                 "undefined method `foobar' for an instance of String"
+                               when /^3.2/
+                                 "undefined method `foobar' for \"hello\":String"
+                               else
+                                 raise "Unexpected ruby version: #{RUBY_VERSION}"
+                               end
+
+      assert_equal expected_error_message, results.first[1].message
+    end
+
+    def test_no_method_error_in_mid_lamda_function
+      batch = Batch.build do
+        # valid stage
+        stage ->(data) { data.upcase }
+
+        # invalid stage - calling invalid method
+        stage ->(data) { data.foobar }
+
+        # valid stage
+        stage ->(data) { data + '!' }
+      end
+
+      batch.push("hello")
+
+      results = batch.results
+
+      assert_equal 1, results.length
+      assert_equal "HELLO", results.first[0]
+      assert_instance_of NoMethodError, results.first[1]
+
+      expected_error_message = case RUBY_VERSION
+                               when /^3.4/
+                                 "undefined method 'foobar' for an instance of String"
+                               when /^3.3/
+                                 "undefined method `foobar' for an instance of String"
+                               when /^3.2/
+                                 "undefined method `foobar' for \"HELLO\":String"
+                               else
+                                 raise "Unexpected ruby version: #{RUBY_VERSION}"
+                               end
+
+      assert_equal expected_error_message, results.first[1].message
+    end
   end
 end
