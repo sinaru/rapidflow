@@ -6,7 +6,7 @@ require_relative "rapidflow/counter"
 require_relative "rapidflow/pipeline"
 require_relative "rapidflow/work_item"
 require_relative "rapidflow/stage"
-require_relative "rapidflow/builder_builder"
+require_relative "rapidflow/batch_builder"
 require_relative "rapidflow/batch"
 
 module RapidFlow
