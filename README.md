@@ -6,8 +6,8 @@
 [![Gem Version](https://badge.fury.io/rb/rapidflow.svg)](https://badge.fury.io/rb/rapidflow)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **⚠️ Early Development Warning**: This library is at a very early stage of development. The interfaces and APIs 
-> may change without backward compatibility guarantees. Use in production at your own risk.
+> **⚠️ This library is at a very early stage of development. The interfaces and APIs 
+> may change without backward compatibility guarantees.
 
 RapidFlow is a lightweight, concurrent pipeline processor for Ruby that transforms data through multiple stages like 
 items moving through stages in a rapid flow. Perfect for I/O-bound operations like web scraping, API calls, 
