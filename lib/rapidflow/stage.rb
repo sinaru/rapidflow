@@ -4,6 +4,8 @@ module RapidFlow
   # Represents a processing stage in the pipeline
   class Stage
     def initialize(stage_index:, lambda_fn:, workers:, is_final:, pipeline:)
+      validate_worker!(workers)
+
       @stage_index = stage_index
       @lambda_fn = lambda_fn
       @workers = workers
@@ -55,6 +57,12 @@ module RapidFlow
     def forward_item(work_item)
       @pipeline.enqueue(@stage_index + 1, work_item)
       @pipeline.decrement_active_workers if @is_final
+    end
+
+    def validate_worker!(workers)
+      return if workers.kind_of?(Integer) && workers.positive?
+
+      raise RapidFlow::ConfigError, "Worker count should be a positive number for stage"
     end
   end
 end

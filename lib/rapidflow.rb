@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "rapidflow/version"
+require_relative "rapidflow/errors"
 require_relative "rapidflow/counter"
 require_relative "rapidflow/pipeline"
 require_relative "rapidflow/work_item"

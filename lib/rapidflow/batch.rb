@@ -2,9 +2,6 @@
 
 module RapidFlow
   class Batch
-    class ConfigError < RuntimeError; end
-    class RunError < RuntimeError; end
-
     # DSL entrypoint
     def self.build(&block)
       builder = BatchBuilder.new
@@ -33,7 +30,7 @@ module RapidFlow
     end
 
     def start
-      raise ConfigError, "Unable to start the batch without any stages" if @stages.empty?
+      raise RapidFlow::ConfigError, "Unable to start the batch without any stages" if @stages.empty?
 
       @stages.each(&:start)
       mark_run!
@@ -86,13 +83,13 @@ module RapidFlow
 
     def ensure_not_finalized!
       @locked_mutex.synchronize do
-        raise RunError, "Cannot push to a locked batch when results are requested" if @locked
+        raise RapidFlow::RunError, "Cannot push to a locked batch when results are requested" if @locked
       end
     end
 
     def ensure_running!
       @running_mutex.synchronize do
-        raise RunError, "Batch has not started" unless @running
+        raise RapidFlow::RunError, "Batch has not started" unless @running
       end
     end
 
