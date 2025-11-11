@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-module Rapidflow
+module RapidFlow
   class PipelineTest < Minitest::Test
     def test_empty_pipeline
       pipeline = Pipeline.new(0, 1)

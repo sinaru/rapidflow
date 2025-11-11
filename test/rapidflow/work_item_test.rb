@@ -1,6 +1,6 @@
 require "test_helper"
 
-module Rapidflow
+module RapidFlow
   class WorkItemTest < Minitest::Test
     def test_default_initialization
       item = WorkItem.new

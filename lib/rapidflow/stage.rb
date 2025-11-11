@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Rapidflow
+module RapidFlow
   # Represents a processing stage in the pipeline
   class Stage
     def initialize(stage_index:, lambda_fn:, workers:, is_final:, pipeline:)

@@ -7,5 +7,5 @@ require_relative "rapidflow/work_item"
 require_relative "rapidflow/stage"
 require_relative "rapidflow/batch"
 
-module Rapidflow
+module RapidFlow
 end

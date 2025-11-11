@@ -89,11 +89,11 @@ def process_images_synchronously(image_paths, output_dir)
   results
 end
 
-# Solution 2: Rapidflow concurrent processing
+# Solution 2: RapidFlow concurrent processing
 def process_images_with_rapidflow(image_paths, output_dir, workers: 4)
   FileUtils.mkdir_p(output_dir)
 
-  belt = Rapidflow::Batch.build do
+  belt = RapidFlow::Batch.build do
     # Stage 1: Load image
     stage ->(path) { ImageProcessor.load_image(path) }, workers: workers
 
@@ -114,7 +114,7 @@ end
 # Run benchmark
 def run_benchmark(sample_image_path, image_count: 50, workers: 4)
   puts "=" * 80
-  puts "Rapidflow Image Processing Benchmark"
+  puts "RapidFlow Image Processing Benchmark"
   puts "=" * 80
   puts
   puts "Configuration:"
@@ -157,7 +157,7 @@ def run_benchmark(sample_image_path, image_count: 50, workers: 4)
   end
   puts
 
-  # Benchmark Rapidflow
+  # Benchmark RapidFlow
   puts "-" * 80
   puts "2. RAPIDFLOW CONCURRENT PROCESSING"
   puts "-" * 80
@@ -166,7 +166,7 @@ def run_benchmark(sample_image_path, image_count: 50, workers: 4)
   rapidflow_results = nil
 
   Benchmark.bm(30) do |x|
-    rapidflow_time = x.report("Rapidflow (#{workers} workers):") do
+    rapidflow_time = x.report("RapidFlow (#{workers} workers):") do
       rapidflow_results = process_images_with_rapidflow(image_paths, "tmp/output_rapidflow", workers: workers)
     end
   end
@@ -191,7 +191,7 @@ def run_benchmark(sample_image_path, image_count: 50, workers: 4)
   puts "=" * 80
   puts
   puts "Synchronous time:     #{sync_real_time.round(2)}s"
-  puts "Rapidflow time:       #{rapidflow_real_time.round(2)}s"
+  puts "RapidFlow time:       #{rapidflow_real_time.round(2)}s"
   puts
   puts "Speedup:              #{speedup.round(2)}x faster"
   puts "Time saved:           #{time_saved.round(2)}s"

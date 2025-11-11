@@ -4,7 +4,7 @@ require_relative "lib/rapidflow/version"
 
 Gem::Specification.new do |spec|
   spec.name = "rapidflow"
-  spec.version = Rapidflow::VERSION
+  spec.version = RapidFlow::VERSION
   spec.authors = ["Sinaru Gunawardena"]
   spec.email = ["sinarug@gmail.com"]
 

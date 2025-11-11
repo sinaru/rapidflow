@@ -82,11 +82,11 @@ def process_data_synchronously(user_ids, output_dir)
   results
 end
 
-# Solution 2: Rapidflow concurrent processing
+# Solution 2: RapidFlow concurrent processing
 def process_data_with_rapidflow(user_ids, output_dir, workers: 8)
   FileUtils.mkdir_p(output_dir)
 
-  belt = Rapidflow::Batch.build do
+  belt = RapidFlow::Batch.build do
     # Stage 1: Fetch user data from API
     stage ->(user_id) {
       ApiClient.fetch_user(user_id)
@@ -119,13 +119,13 @@ end
 # Run benchmark
 def run_benchmark(max_user_id: 30, workers: 8)
   puts "=" * 80
-  puts "Rapidflow API Request, Process & Store Benchmark"
+  puts "RapidFlow API Request, Process & Store Benchmark"
   puts "=" * 80
   puts
   puts "Configuration:"
   puts "  API: dummyjson.com"
   puts "  User IDs to process: 1 to #{max_user_id}"
-  puts "  Workers per stage (Rapidflow): #{workers}"
+  puts "  Workers per stage (RapidFlow): #{workers}"
   puts "  Stages: Fetch User → Fetch Product → Merge Data → Save to File"
   puts
 
@@ -167,7 +167,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
   end
   puts
 
-  # Benchmark Rapidflow
+  # Benchmark RapidFlow
   puts "-" * 80
   puts "2. RAPIDFLOW CONCURRENT PROCESSING"
   puts "-" * 80
@@ -176,7 +176,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
   rapidflow_results = nil
 
   Benchmark.bm(30) do |x|
-    rapidflow_time = x.report("Rapidflow (#{workers} workers):") do
+    rapidflow_time = x.report("RapidFlow (#{workers} workers):") do
       rapidflow_results = process_data_with_rapidflow(user_ids, "tmp/output_rapidflow", workers: workers)
     end
   end
@@ -210,7 +210,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
   puts "=" * 80
   puts
   puts "Synchronous time:     #{sync_real_time.round(2)}s"
-  puts "Rapidflow time:       #{rapidflow_real_time.round(2)}s"
+  puts "RapidFlow time:       #{rapidflow_real_time.round(2)}s"
   puts
   puts "Speedup:              #{speedup.round(2)}x faster"
   puts "Time saved:           #{time_saved.round(2)}s"
@@ -226,7 +226,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
   rapidflow_files = Dir.glob("tmp/output_rapidflow/data_*.json").length
 
   puts "Synchronous output:   #{sync_files} files created"
-  puts "Rapidflow output:     #{rapidflow_files} files created"
+  puts "RapidFlow output:     #{rapidflow_files} files created"
   puts
 
   # Sample file content verification
@@ -256,7 +256,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
 
   puts "Average time per item:"
   puts "  Synchronous:  #{(avg_time_per_item_sync * 1000).round(2)}ms"
-  puts "  Rapidflow:    #{(avg_time_per_item_rapid * 1000).round(2)}ms"
+  puts "  RapidFlow:    #{(avg_time_per_item_rapid * 1000).round(2)}ms"
   puts
 
   throughput_sync = max_user_id / sync_real_time
@@ -264,7 +264,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
 
   puts "Throughput (items/second):"
   puts "  Synchronous:  #{throughput_sync.round(2)} items/sec"
-  puts "  Rapidflow:    #{throughput_rapid.round(2)} items/sec"
+  puts "  RapidFlow:    #{throughput_rapid.round(2)} items/sec"
   puts
 
   # Cleanup prompt
@@ -273,7 +273,7 @@ def run_benchmark(max_user_id: 30, workers: 8)
   puts "-" * 80
   puts
   puts "Synchronous files: tmp/output_sync/"
-  puts "Rapidflow files:   tmp/output_rapidflow/"
+  puts "RapidFlow files:   tmp/output_rapidflow/"
   puts
   puts "To clean up output directories, run:"
   puts "  rm -rf tmp/output_sync tmp/output_rapidflow"

@@ -109,9 +109,9 @@ def process_data_synchronously(urls)
   results
 end
 
-# Solution 2: Rapidflow concurrent processing
+# Solution 2: RapidFlow concurrent processing
 def process_data_with_rapidflow(urls, workers: 4)
-  belt = Rapidflow::Batch.build do
+  belt = RapidFlow::Batch.build do
     stage ->(url) { DataProcessor.fetch_html(url) }, workers: workers # Station 1: Fetch HTML
     stage ->(html) { DataProcessor.parse_data(html) }, workers: workers # Station 2: Parse data
     stage ->(data) { DataProcessor.fetch_other_data(data) }, workers: workers # Station 3: Fetch other data
@@ -126,7 +126,7 @@ end
 # Run benchmark
 def run_benchmark(url_count: 50, workers: 4)
   puts "=" * 80
-  puts "Rapidflow Data Processing Benchmark"
+  puts "RapidFlow Data Processing Benchmark"
   puts "=" * 80
   puts
   puts "Configuration:"
@@ -163,7 +163,7 @@ def run_benchmark(url_count: 50, workers: 4)
   puts "Results: #{sync_success} successful, #{sync_failed} failed"
   puts
 
-  # Benchmark Rapidflow
+  # Benchmark RapidFlow
   puts "-" * 80
   puts "2. RAPIDFLOW CONCURRENT PROCESSING"
   puts "-" * 80
@@ -172,7 +172,7 @@ def run_benchmark(url_count: 50, workers: 4)
   rapidflow_results = nil
 
   Benchmark.bm(30) do |x|
-    rapidflow_time = x.report("Rapidflow (#{workers} workers):") do
+    rapidflow_time = x.report("RapidFlow (#{workers} workers):") do
       rapidflow_results = process_data_with_rapidflow(urls, workers: workers)
     end
   end
@@ -197,7 +197,7 @@ def run_benchmark(url_count: 50, workers: 4)
   puts "=" * 80
   puts
   puts "Synchronous time:     #{sync_real_time.round(2)}s"
-  puts "Rapidflow time:       #{rapidflow_real_time.round(2)}s"
+  puts "RapidFlow time:       #{rapidflow_real_time.round(2)}s"
   puts
   puts "Speedup:              #{speedup.round(2)}x faster"
   puts "Time saved:           #{time_saved.round(2)}s"

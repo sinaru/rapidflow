@@ -1,4 +1,4 @@
-# 🌊 Rapidflow
+# 🌊 RapidFlow
 
 ⚙️💎➡️📦💨🔁🌊
 > A Ruby library for concurrent batch data processing through lightweight, composable flows.
@@ -9,7 +9,7 @@
 > **⚠️ Early Development Warning**: This library is at a very early stage of development. The interfaces and APIs 
 > may change without backward compatibility guarantees. Use in production at your own risk.
 
-Rapidflow is a lightweight, concurrent pipeline processor for Ruby that transforms data through multiple stages like 
+RapidFlow is a lightweight, concurrent pipeline processor for Ruby that transforms data through multiple stages like 
 items moving through stages in a rapid flow. Perfect for I/O-bound operations like web scraping, API calls, 
 and data processing.
 
@@ -55,7 +55,7 @@ Create a batch instance.
 require 'rapidflow'
 
 # Create a 3-stage processing batch. Workers can be configured per stage basis or will use the default amount if omitted.
-scraper = Rapidflow::Batch.build do
+scraper = RapidFlow::Batch.build do
   stage ->(url) { fetch_html(url) }, workers: 8 # Stage 1: Fetch HTML
   stage ->(html) { parse_data(html) }, workers: 2 # Stage 2: Parse data
   stage ->(data) { save_to_db(data) } # Stage 3: Save to a database
@@ -65,7 +65,7 @@ end
 Alternatively, you can also initialize the batch with the following syntax:
 
 ```ruby
-batch = Rapidflow::Batch.new(
+batch = RapidFlow::Batch.new(
   { fn: ->(url) { fetch_html(url) }, workers: 8 }, # Stage 1: Fetch HTML.
   { fn: ->(html) { parse_data(html) }, workers: 2 }, # Stage 2: Parse data
   { fn: ->(data) { save_to_db(data) } } # Stage 3: Save to database
@@ -107,7 +107,7 @@ end
 ### Web Scraping Pipeline
 
 ```ruby
-scraper = Rapidflow::Batch.build do
+scraper = RapidFlow::Batch.build do
   stage ->(url) {
     # Fetch HTML (may take 1-2 seconds per URL)
     HTTP.get(url).to_s
@@ -137,7 +137,7 @@ results = scraper.results
 ### Image Processing Pipeline
 
 ```ruby
-processor = Rapidflow::Batch.build do
+processor = RapidFlow::Batch.build do
   stage ->(path) { MiniMagick::Image.open(path) }, workers: 4 # Stage 1: Load image
   stage ->(img) { img.resize('800x600'); img }, workers: 4 # Stage 2: Resize
   stage ->(img) { img.colorspace('Gray'); img }, workers: 4 # Stage 3: Convert to grayscale
@@ -153,7 +153,7 @@ puts "Processed #{results.count { |_, err| err.nil? }} images successfully"
 ### API Data Enrichment
 
 ```ruby
-enricher = Rapidflow::Batch.build do
+enricher = RapidFlow::Batch.build do
   stage ->(user_id) {
     # Fetch user data from API
     api_client.get("/users/#{user_id}").parse
@@ -182,7 +182,7 @@ enriched_users = enricher.results
 
 ```ruby
 # Extract, Transform, Load
-etl = Rapidflow::Batch.build do
+etl = RapidFlow::Batch.build do
   stage ->(filename) {
     # Extract: Read CSV file
     CSV.read(filename, headers: true).map(&:to_h)
@@ -212,7 +212,7 @@ puts "Loaded #{total_records} records"
 ```ruby
 # Sometimes you just need parallel processing without multiple stages
 # Fetch 20 URLs concurrently
-fetcher = Rapidflow::Batch.new({ fn: ->(url) { HTTP.get(url).body }, workers: 20 })
+fetcher = RapidFlow::Batch.new({ fn: ->(url) { HTTP.get(url).body }, workers: 20 })
 
 urls.each { |url| fetcher.push(url) }
 pages = fetcher.results
@@ -220,10 +220,10 @@ pages = fetcher.results
 
 ## Error Handling
 
-Rapidflow captures exceptions without stopping the pipeline:
+RapidFlow captures exceptions without stopping the pipeline:
 
 ```ruby
-batch = Rapidflow::Batch.new(
+batch = RapidFlow::Batch.new(
   { fn: ->(url) { HTTP.get(url).body } }, # May raise network errors
   { fn: ->(body) { JSON.parse(body) } } # May raise JSON parse errors
 )
@@ -250,7 +250,7 @@ end
 
 ## Architecture
 
-Rapidflow uses a multi-stage pipeline architecture with concurrent workers at each stage.
+RapidFlow uses a multi-stage pipeline architecture with concurrent workers at each stage.
 
 ### Pipeline Flow
 
@@ -354,10 +354,10 @@ Choose based on your workload:
 
 ```ruby
 # High I/O workload - many workers
-Rapidflow::Batch.new({ fn: lambda1, workers: 100 }, { fn: lambda2, workers: 50 })
+RapidFlow::Batch.new({ fn: lambda1, workers: 100 }, { fn: lambda2, workers: 50 })
 
 # CPU-intensive - fewer workers
-Rapidflow::Batch.new({ fn: lambda1, workers: 2 }, { fn: lambda2, workers: 2 })
+RapidFlow::Batch.new({ fn: lambda1, workers: 2 }, { fn: lambda2, workers: 2 })
 ```
 
 ### Balancing Workers for Stages
@@ -366,7 +366,7 @@ For the best throughput, workers should be assigned based on the I/O-bound workl
 
 ```ruby
 # ❌ Same number of workers even though stages have different I/O duration
-Rapidflow::Batch.build do
+RapidFlow::Batch.build do
   stage ->(x) { sleep(10); x }, workers: 4 # 10 seconds - SLOW! (Assume a heavy or long-running I/O task)
   stage ->(x) { sleep(0.1); x }, workers: 4 # 0.1 seconds - fast
   stage ->(x) { sleep(0.1); x }, workers: 4 # 0.1 seconds - fast
@@ -374,7 +374,7 @@ Rapidflow::Batch.build do
 end
 
 # ✅ Balanced - workers are assigned based of I/O load
-Rapidflow::Batch.build do
+RapidFlow::Batch.build do
   stage ->(x) { sleep(10); x }, workers: 16 # 10 seconds - SLOW!
   stage ->(x) { sleep(0.1); x }, workers: 2 # 0.1 seconds - fast
   stage ->(x) { sleep(0.1); x }, workers: 2 # 0.1 seconds - fast
@@ -404,11 +404,11 @@ end
 - Share mutable state between workers without synchronization
 - Push millions of items without processing results (memory issue)
 - Create dependencies between items (order of execution not guaranteed)
-- Nest Rapidflow instances (use a single multi-stage batch instead)
+- Nest RapidFlow instances (use a single multi-stage batch instead)
 
 ## Comparison with Alternatives
 
-| Feature                  | Rapidflow | Thread Pool   | Sidekiq        | Concurrent-Ruby |
+| Feature                  | RapidFlow | Thread Pool   | Sidekiq        | Concurrent-Ruby |
 |--------------------------|-----------|---------------|----------------|-----------------|
 | **Multi-stage pipeline** | ✅        | ❌            | ⚠️ (manual)    | ❌              |
 | **Order preservation**   | ✅        | ❌            | ❌             | ❌              |
@@ -425,13 +425,13 @@ The following result is taken from a benchmark run of [./scripts/benchmark/bench
 ```bash
 /scripts/benchmark$ ruby benchmark_api_request_process_and_storing.rb 40 32
 ================================================================================
-Rapidflow API Request, Process & Store Benchmark
+RapidFlow API Request, Process & Store Benchmark
 ================================================================================
 
 Configuration:
   API: dummyjson.com
   User IDs to process: 1 to 40
-  Workers per stage (Rapidflow): 32
+  Workers per stage (RapidFlow): 32
   Stages: Fetch User → Fetch Product → Merge Data → Save to File
 
 Processing 40 user IDs...
@@ -448,7 +448,7 @@ Results: 40 successful, 0 failed
 2. RAPIDFLOW CONCURRENT PROCESSING
 --------------------------------------------------------------------------------
                                      user     system      total        real
-Rapidflow (32 workers):          0.217776   0.084002   0.301778 (  0.612455)
+RapidFlow (32 workers):          0.217776   0.084002   0.301778 (  0.612455)
 
 Results: 40 successful, 0 failed
 
@@ -457,7 +457,7 @@ SUMMARY
 ================================================================================
 
 Synchronous time:     13.18s
-Rapidflow time:       0.61s
+RapidFlow time:       0.61s
 
 Speedup:              21.52x faster
 Time saved:           12.57s
@@ -467,7 +467,7 @@ Performance gain:     2052.1%
 FILE VERIFICATION
 --------------------------------------------------------------------------------
 Synchronous output:   40 files created
-Rapidflow output:     40 files created
+RapidFlow output:     40 files created
 
 Sample output file: data_1.json
   User ID: 1
@@ -482,11 +482,11 @@ PERFORMANCE ANALYSIS
 
 Average time per item:
   Synchronous:  329.51ms
-  Rapidflow:    15.31ms
+  RapidFlow:    15.31ms
 
 Throughput (items/second):
   Synchronous:  3.03 items/sec
-  Rapidflow:    65.31 items/sec
+  RapidFlow:    65.31 items/sec
 ```
 
 ## Development
@@ -506,7 +506,7 @@ to be a safe, welcoming space for collaboration, and contributors are expected t
 
 ## Code of Conduct
 
-Everyone interacting in the Rapidflow project's codebases, issue trackers, chat rooms and mailing lists is expected 
+Everyone interacting in the RapidFlow project's codebases, issue trackers, chat rooms and mailing lists is expected 
 to follow the [code of conduct](https://github.com/sinaru/rapidflow/blob/main/CODE_OF_CONDUCT.md).
 
 ## License

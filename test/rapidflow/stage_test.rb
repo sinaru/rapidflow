@@ -2,7 +2,7 @@
 
 require "test_helper"
 
-module Rapidflow
+module RapidFlow
   class StageTest < Minitest::Test
     def test_stage_processes_single_item
       pipeline = Pipeline.new(1, 1)

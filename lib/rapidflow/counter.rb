@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Rapidflow
+module RapidFlow
   # Tracks item indices for ordering
   class Counter
     def initialize

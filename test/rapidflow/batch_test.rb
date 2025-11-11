@@ -1,6 +1,6 @@
 require "test_helper"
 
-module Rapidflow
+module RapidFlow
   class BatchTest < Minitest::Test
     def test_basic_functionality_with_arg_tasks
       belt = Batch.new(

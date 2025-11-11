@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Rapidflow
+module RapidFlow
   class Batch
     class ConfigError < RuntimeError; end
     class RunError < RuntimeError; end
