@@ -89,8 +89,7 @@ Note that Once you call `Batch#results`, it will block the batch until all proce
 longer push items to the batch instance.
 
 The results are returned in the same order as the original items were pushed. Each result is an array of
-`[data, error]`. If an error happened for an item during processing, `error` will be present with the Error instance. 
-Otherwise `data` represent the final data that was successfully processed and `error` will be `nil`.
+`[data, error]`. No error means, the item successfully were processed through the stages.
 
 ```ruby
 results.each_with_index do |(data, error), index|
@@ -101,6 +100,46 @@ results.each_with_index do |(data, error), index|
   end
 end
 ```
+
+## Error Handling
+
+RapidFlow continues running even when errors occur, instead of stopping the entire pipeline.
+
+When an item encounters an error at any stage, RapidFlow captures that error and immediately moves the item to the 
+final results—skipping all remaining stages for that particular item.
+
+Each result comes as a pair: `[data, error]`.
+- If processing failed: `error` contains the Error instance, and `data` holds whatever transformed data existed 
+from the last successful stage (or original input data if the error occurred at the first stage).
+- If processing succeeded: `data` contains the fully processed result, and `error` is `nil`.
+
+```ruby
+batch = RapidFlow::Batch.new(
+  { fn: ->(url) { HTTP.get(url).body } }, # May raise network errors
+  { fn: ->(body) { JSON.parse(body) } } # May raise JSON parse errors
+)
+
+urls.each { |url| batch.push(url) }
+results = batch.results
+
+results.each_with_index do |(data, error), index|
+  if error
+    # Original input is preserved in 'data' for debugging
+    puts "Failed to process #{urls[index]}: #{error.class} - #{error.message}"
+    # Log error, retry, or handle gracefully
+    # As any Exception contains the backtrace(https://docs.ruby-lang.org/en/master/Exception.html#method-i-backtrace),
+    # for further debugging, you can refer to backtrace.
+  else
+    puts "Success: #{data}"
+  end
+end
+```
+
+**Error behavior:**
+- Exceptions are caught and returned with results
+- The transformed data from the previous stage is preserved when an error occurs
+- Errors in early stages skip remaining stages until they reach the result queue
+- Other items continue processing (errors don't stop the batch)
 
 ## Usage Examples
 
@@ -217,36 +256,6 @@ fetcher = RapidFlow::Batch.new({ fn: ->(url) { HTTP.get(url).body }, workers: 20
 urls.each { |url| fetcher.push(url) }
 pages = fetcher.results
 ```
-
-## Error Handling
-
-RapidFlow captures exceptions without stopping the pipeline:
-
-```ruby
-batch = RapidFlow::Batch.new(
-  { fn: ->(url) { HTTP.get(url).body } }, # May raise network errors
-  { fn: ->(body) { JSON.parse(body) } } # May raise JSON parse errors
-)
-
-urls.each { |url| batch.push(url) }
-results = batch.results
-
-results.each_with_index do |(data, error), index|
-  if error
-    # Original input is preserved in 'data' for debugging
-    puts "Failed to process #{urls[index]}: #{error.class} - #{error.message}"
-    # Log error, retry, or handle gracefully
-  else
-    puts "Success: #{data}"
-  end
-end
-```
-
-**Error behavior:**
-- Exceptions are caught and returned with results
-- The original data is preserved when an error occurs
-- Errors in early stages passed down to remaining stages until they reach the result queue
-- Other items continue processing (errors don't stop the batch)
 
 ## Architecture
 
