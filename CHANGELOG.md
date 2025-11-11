@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Rename module `Rapidflow` to `RapidFlow`.
+- Move custom error classes from `RapidFlow::Batch` class under to `RapidFlow` module.
 
 ## [0.1.0] - 2025.11.01
 

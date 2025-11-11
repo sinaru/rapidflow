@@ -4,7 +4,7 @@ require "test_helper"
 module RapidFlow
   class BatchConfigErrorTest < Minitest::Test
     def test_no_stages_with_build
-      error = assert_raises(Batch::ConfigError) do
+      error = assert_raises(RapidFlow::ConfigError) do
         Batch.build do
           # no stages
         end
@@ -14,7 +14,7 @@ module RapidFlow
     end
 
     def test_no_stages_batch_start
-      error = assert_raises(Batch::ConfigError) do
+      error = assert_raises(RapidFlow::ConfigError) do
         batch = Batch.new
         batch.start
       end
@@ -30,7 +30,7 @@ module RapidFlow
         'foo',
         :bar
       ].each do |invalid_worker_count|
-        error = assert_raises(Batch::ConfigError, "Expected to raise exception for '#{invalid_worker_count}'") do
+        error = assert_raises(RapidFlow::ConfigError, "Expected to raise exception for '#{invalid_worker_count}'") do
           Batch.new({ fn: ->(data) { data.upcase }, workers: invalid_worker_count })
         end
 

@@ -62,7 +62,7 @@ module RapidFlow
     def validate_worker!(workers)
       return if workers.kind_of?(Integer) && workers.positive?
 
-      raise RapidFlow::Batch::ConfigError, "Worker count should be a positive number for stage"
+      raise RapidFlow::ConfigError, "Worker count should be a positive number for stage"
     end
   end
 end

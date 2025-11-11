@@ -156,7 +156,7 @@ module RapidFlow
       batch.push("item1")
       batch.results
 
-      error = assert_raises(Batch::RunError) { batch.push("item2") }
+      error = assert_raises(RapidFlow::RunError) { batch.push("item2") }
 
       assert_equal "Cannot push to a locked batch when results are requested", error.message
     end
