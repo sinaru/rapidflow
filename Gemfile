@@ -8,7 +8,9 @@ gemspec
 gem "irb"
 gem "rake", "~> 13.0"
 gem "minitest", "~> 5.0"
+
+# bikeshed-proof linter and formatter. ref: https://github.com/standardrb/standard
 gem "standard", "~> 1.3"
 
-# used for one benchmarking scripts
+# Used for one of the benchmarking scripts
 gem "mini_magick"

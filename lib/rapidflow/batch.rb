@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-module Rapidflow
+module RapidFlow
   class Batch
     class ConfigError < RuntimeError; end
     class RunError < RuntimeError; end
 
     # DSL entrypoint
     def self.build(&block)
-      builder = Builder.new
+      builder = BatchBuilder.new
       builder.instance_eval(&block) if block
-      belt = new(*builder.stages)
-      belt.start
-      belt
+      batch = new(*builder.stages)
+      batch.start
+      batch
     end
 
     # Initialize with a list of stage configs: { fn: -> (input) { }, workers: Integer }, ...
@@ -27,13 +27,13 @@ module Rapidflow
       @locked = false
       @locked_mutex = Mutex.new
 
-      # to track if belt is running
+      # to track if batch is running
       @running = false
       @running_mutex = Mutex.new
     end
 
     def start
-      raise ConfigError, "Unable to start the belt without any stages" if @stages.empty?
+      raise ConfigError, "Unable to start the batch without any stages" if @stages.empty?
 
       @stages.each(&:start)
       mark_run!
@@ -56,19 +56,6 @@ module Rapidflow
     end
 
     private
-
-    # DSL builder
-    class Builder
-      attr_reader :stages
-
-      def initialize
-        @stages = []
-      end
-
-      def stage(lambda_fn, workers: 4)
-        @stages << { fn: lambda_fn, workers: workers }
-      end
-    end
 
     def build_stages
       stages = []
@@ -99,7 +86,7 @@ module Rapidflow
 
     def ensure_not_finalized!
       @locked_mutex.synchronize do
-        raise RunError, "Cannot push to a locked belt when results are requested" if @locked
+        raise RunError, "Cannot push to a locked batch when results are requested" if @locked
       end
     end
 

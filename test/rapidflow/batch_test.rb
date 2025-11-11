@@ -1,18 +1,18 @@
 require "test_helper"
 
-module Rapidflow
+module RapidFlow
   class BatchTest < Minitest::Test
     def test_basic_functionality_with_arg_tasks
-      belt = Batch.new(
+      batch = Batch.new(
         { fn: ->(data) { data.upcase }, workers: 4 },
         { fn: ->(data) { data + "!" }, workers: 4 }
       )
-      belt.start
+      batch.start
 
-      belt.push("hello")
-      belt.push("world")
+      batch.push("hello")
+      batch.push("world")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert_equal ["HELLO!", nil], results[0]
@@ -20,7 +20,7 @@ module Rapidflow
     end
 
     def test_basic_functionality_with_build
-      belt = Batch.build do
+      batch = Batch.build do
         # first stage to up case string
         stage ->(data) { data.upcase }
 
@@ -28,10 +28,10 @@ module Rapidflow
         stage ->(data) { data + "!" }
       end
 
-      belt.push("hello")
-      belt.push("world")
+      batch.push("hello")
+      batch.push("world")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert_equal ["HELLO!", nil], results[0]
@@ -39,18 +39,22 @@ module Rapidflow
     end
 
     def test_no_stages_with_build
-      assert_raises(Batch::ConfigError, "Unable to start the belt without any stages") do
+      error = assert_raises(Batch::ConfigError) do
         Batch.build do
           # no stages
         end
       end
+
+      assert_equal "Unable to start the batch without any stages", error.message
     end
 
-    def test_no_stages_belt_start
-      assert_raises(Batch::ConfigError, "Unable to start the belt without any stages") do
-        belt = Batch.new
-        belt.start
+    def test_no_stages_batch_start
+      error = assert_raises(Batch::ConfigError) do
+        batch = Batch.new
+        batch.start
       end
+
+      assert_equal "Unable to start the batch without any stages", error.message
     end
 
     def test_concurrent_execution_is_faster_than_sequential
@@ -59,7 +63,7 @@ module Rapidflow
       # - Sequential would take: 4 items * 0.5s * 2 stages = 4 seconds
       # - Concurrent (4 workers per stage) should take: max(0.5s, 0.5s) = ~0.5-1s
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           sleep(0.5)
           data
@@ -72,8 +76,8 @@ module Rapidflow
 
       start_time = Time.now
 
-      4.times { |i| belt.push(i) }
-      results = belt.results
+      4.times { |i| batch.push(i) }
+      results = batch.results
 
       elapsed = Time.now - start_time
 
@@ -89,7 +93,7 @@ module Rapidflow
       stage1_executing = []
       stage2_executing = []
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           execution_tracker.synchronize { stage1_executing << data }
           sleep(0.3)
@@ -105,7 +109,7 @@ module Rapidflow
       end
 
       # Push multiple items quickly
-      10.times { |i| belt.push(i) }
+      10.times { |i| batch.push(i) }
 
       # Give threads time to start processing
       sleep(0.1)
@@ -117,7 +121,7 @@ module Rapidflow
                "Expected concurrent execution, but only #{stage1_executing.length} items processing"
       end
 
-      results = belt.results
+      results = batch.results
       assert_equal 10, results.length
     end
 
@@ -125,7 +129,7 @@ module Rapidflow
       # Track execution order to verify pipeline behavior
       execution_log = Queue.new
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           execution_log.push("stage1_start_#{data}")
           sleep(0.2)
@@ -140,11 +144,11 @@ module Rapidflow
         }
       end
 
-      belt.push("A")
+      batch.push("A")
       sleep(0.1) # Let A start processing
-      belt.push("B")
+      batch.push("B")
 
-      belt.results
+      batch.results
 
       # Convert log to array
       log = []
@@ -163,7 +167,7 @@ module Rapidflow
     end
 
     def test_error_handling_captures_exceptions
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           raise "Error in stage 1" if data == "bad"
           data
@@ -171,10 +175,10 @@ module Rapidflow
         stage ->(data) { data.upcase }
       end
 
-      belt.push("good")
-      belt.push("bad")
+      batch.push("good")
+      batch.push("bad")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
 
@@ -189,22 +193,22 @@ module Rapidflow
     end
 
     def test_cannot_push_after_results_called
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data }
       end
 
-      belt.push("item1")
-      belt.results
+      batch.push("item1")
+      batch.results
 
-      assert_raises(Batch::RunError, "Cannot push to a locked belt when results are requested") do
-        belt.push("item2")
-      end
+      error = assert_raises(Batch::RunError) { batch.push("item2") }
+
+      assert_equal "Cannot push to a locked batch when results are requested", error.message
     end
 
     def test_results_waits_for_all_processing_to_complete
       completion_times = Queue.new
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           sleep(0.5)
           data
@@ -215,11 +219,11 @@ module Rapidflow
         }
       end
 
-      belt.push("item1")
-      belt.push("item2")
+      batch.push("item1")
+      batch.push("item2")
 
       Time.now
-      results = belt.results
+      results = batch.results
       results_end = Time.now
 
       # All items should have completed before results returns
@@ -237,7 +241,7 @@ module Rapidflow
     def test_high_throughput_with_many_items
       item_count = 100
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           sleep(0.01)
           data * 2
@@ -249,8 +253,8 @@ module Rapidflow
       end
 
       start_time = Time.now
-      item_count.times { |i| belt.push(i) }
-      results = belt.results
+      item_count.times { |i| batch.push(i) }
+      results = batch.results
       elapsed = Time.now - start_time
 
       assert_equal item_count, results.length
@@ -266,7 +270,7 @@ module Rapidflow
     end
 
     def test_three_stage_pipeline
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           sleep(0.1)
           data.upcase
@@ -281,10 +285,10 @@ module Rapidflow
         }
       end
 
-      belt.push("hello")
-      belt.push("world")
+      batch.push("hello")
+      batch.push("world")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert_equal ["HELLO!HELLO!", nil], results[0]
@@ -293,7 +297,7 @@ module Rapidflow
 
     def test_results_preserve_input_order
       # Even though items complete at different times, results should match push order
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           # Make later items finish faster
           sleep_time = (data[:id] == 0) ? 0.5 : 0.1
@@ -304,9 +308,9 @@ module Rapidflow
 
       # Push items in order 0, 1, 2, 3
       # But item 0 will take longer to complete
-      4.times { |i| belt.push({ id: i }) }
+      4.times { |i| batch.push({ id: i }) }
 
-      results = belt.results
+      results = batch.results
 
       # Results should still be in order 0, 1, 2, 3
       assert_equal 4, results.length
@@ -317,14 +321,14 @@ module Rapidflow
     end
 
     def test_single_stage_pipeline
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data * 2 }
       end
 
-      belt.push(5)
-      belt.push(10)
+      batch.push(5)
+      batch.push(10)
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert_equal [10, nil], results[0]
@@ -332,15 +336,15 @@ module Rapidflow
     end
 
     def test_empty_pipeline
-      belt = Batch.build { stage ->(_data) { } }
+      batch = Batch.build { stage ->(_data) { } }
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 0, results.length
     end
 
     def test_error_in_middle_stage
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data.upcase }
         stage ->(data) {
           raise "Error in stage 2" if data == "BAD"
@@ -349,11 +353,11 @@ module Rapidflow
         stage ->(data) { data + "!" }
       end
 
-      belt.push("good")
-      belt.push("bad")
-      belt.push("also_good")
+      batch.push("good")
+      batch.push("bad")
+      batch.push("also_good")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 3, results.length
       assert_equal ["GOOD!", nil], results[0]
@@ -363,7 +367,7 @@ module Rapidflow
     end
 
     def test_error_in_last_stage
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data.upcase }
         stage ->(data) {
           raise "Error in final stage" if data == "BAD"
@@ -371,10 +375,10 @@ module Rapidflow
         }
       end
 
-      belt.push("good")
-      belt.push("bad")
+      batch.push("good")
+      batch.push("bad")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert_equal ["GOOD", nil], results[0]
@@ -383,19 +387,19 @@ module Rapidflow
     end
 
     def test_multiple_errors_in_sequence
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           raise "Error at #{data}" if data.start_with?("bad")
           data
         }
       end
 
-      belt.push("good1")
-      belt.push("bad1")
-      belt.push("bad2")
-      belt.push("good2")
+      batch.push("good1")
+      batch.push("bad1")
+      batch.push("bad2")
+      batch.push("good2")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 4, results.length
       assert_equal ["good1", nil], results[0]
@@ -431,15 +435,15 @@ module Rapidflow
     end
 
     def test_complex_data_types
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { { original: data, processed: true } }
         stage ->(data) { data.merge(stage2: Time.now.to_i) }
       end
 
-      belt.push({ id: 1, name: "test" })
-      belt.push([1, 2, 3])
+      batch.push({ id: 1, name: "test" })
+      batch.push([1, 2, 3])
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert results[0][0].is_a?(Hash)
@@ -449,15 +453,15 @@ module Rapidflow
     end
 
     def test_nil_values
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data.nil? ? "was_nil" : data }
         stage ->(data) { data.upcase }
       end
 
-      belt.push(nil)
-      belt.push("hello")
+      batch.push(nil)
+      batch.push("hello")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 2, results.length
       assert_equal ["WAS_NIL", nil], results[0]
@@ -467,15 +471,15 @@ module Rapidflow
     def test_large_dataset_stress_test
       item_count = 500
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data * 2 }, workers: 8
         stage ->(data) { data + 1 }, workers: 8
         stage ->(data) { data.to_s }, workers: 8
       end
 
-      item_count.times { |i| belt.push(i) }
+      item_count.times { |i| batch.push(i) }
 
-      results = belt.results
+      results = batch.results
 
       assert_equal item_count, results.length
 
@@ -488,7 +492,7 @@ module Rapidflow
 
     def test_varying_processing_times
       # Simulate real-world scenario with varying processing times
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           sleep(rand * 0.1) # Random 0-100ms
           data.upcase
@@ -500,9 +504,9 @@ module Rapidflow
       end
 
       words = %w[apple banana cherry date elderberry fig grape]
-      words.each { |word| belt.push(word) }
+      words.each { |word| batch.push(word) }
 
-      results = belt.results
+      results = batch.results
 
       assert_equal words.length, results.length
       words.each_with_index do |word, i|
@@ -512,7 +516,7 @@ module Rapidflow
     end
 
     def test_exception_types_preserved
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           case data
           when "argument_error"
@@ -527,12 +531,12 @@ module Rapidflow
         }
       end
 
-      belt.push("good")
-      belt.push("argument_error")
-      belt.push("runtime_error")
-      belt.push("custom_error")
+      batch.push("good")
+      batch.push("argument_error")
+      batch.push("runtime_error")
+      batch.push("custom_error")
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 4, results.length
       assert_equal ["good", nil], results[0]
@@ -542,13 +546,13 @@ module Rapidflow
     end
 
     def test_all_items_fail
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { raise "Always fails" }
       end
 
-      5.times { |i| belt.push(i) }
+      5.times { |i| batch.push(i) }
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 5, results.length
       results.each do |result, error|
@@ -558,14 +562,14 @@ module Rapidflow
     end
 
     def test_push_many_items_quickly
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data }
       end
 
       # Push 1000 items as fast as possible
-      1000.times { |i| belt.push(i) }
+      1000.times { |i| batch.push(i) }
 
-      results = belt.results
+      results = batch.results
 
       assert_equal 1000, results.length
       # Verify order is maintained
@@ -575,22 +579,22 @@ module Rapidflow
     end
 
     def test_idempotent_results_calls_not_allowed
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) { data }
       end
 
-      belt.push(1)
-      belt.results
+      batch.push(1)
+      batch.results
 
       # Can't call results again or push again
-      assert_raises(RuntimeError) { belt.push(2) }
+      assert_raises(RuntimeError) { batch.push(2) }
     end
 
     def test_thread_safety_of_shared_state
       shared_counter = { count: 0 }
       mutex = Mutex.new
 
-      belt = Batch.build do
+      batch = Batch.build do
         stage ->(data) {
           # Safely increment shared counter
           mutex.synchronize { shared_counter[:count] += 1 }
@@ -598,8 +602,8 @@ module Rapidflow
         }, workers: 10
       end
 
-      100.times { |i| belt.push(i) }
-      results = belt.results
+      100.times { |i| batch.push(i) }
+      results = batch.results
 
       assert_equal 100, results.length
       assert_equal 100, shared_counter[:count]

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Rapidflow
+module RapidFlow
   # Manages the queues and worker coordination
   class Pipeline
     # workers_per_stage can be an Integer (uniform) or an Array per stage

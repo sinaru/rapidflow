@@ -1,6 +1,6 @@
 require "test_helper"
 
-module Rapidflow
+module RapidFlow
   class CounterTest < Minitest::Test
     def test_sequential_indices
       counter = Counter.new
